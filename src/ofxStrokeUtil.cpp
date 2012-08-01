@@ -918,6 +918,7 @@ bool ofHull::onLeft(ofPoint a, ofPoint b, ofPoint p){
     }
 }
 
+//recursive hull finding method
 void ofHull::quickHull(){
     
 }
