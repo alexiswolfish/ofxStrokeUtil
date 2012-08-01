@@ -72,3 +72,22 @@ class ofxStrokeUtil{
         float getJointAngle(ofVec2f a, ofVec2f b, ofVec2f c);
         
 };
+
+class ofHull{
+    
+    public:
+        ofHull(ofPath p);
+        ofHull(ofPolyline p);
+    
+        void draw();
+        void quickHull();
+        bool onLeft(ofPoint left, ofPoint right, ofPoint p);
+        int splitAt(vector<ofPoint> p, ofPoint l, ofPoint r);
+    
+        vector<ofPoint> hull;
+        int depth;
+    
+    private:
+    static bool xCoordComparator(ofPoint a, ofPoint b){return (a.x < b.x);}
+
+};

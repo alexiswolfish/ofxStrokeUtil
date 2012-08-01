@@ -213,9 +213,9 @@ ofVec2f ofxStrokeUtil::getVelocityOrientation(ofPath p){
     if(p.hasOutline()){
         ofPoint meanVel = getMeanVelocity(p);
         for(ofPolyline polyline: p.getOutline()){
-            for(int i=1; i<p.getVertices().size(); i++){
-                ofPoint a = p.getVertices()[i-1];
-                ofPoint b = p.getVertices()[i];
+            for(int i=1; i<polyline.getVertices().size(); i++){
+                ofPoint a = polyline.getVertices()[i-1];
+                ofPoint b = polyline.getVertices()[i];
                 ofPoint velocity = b-a;
                 ofPoint difVel = velocity - meanVel;
                 
@@ -374,8 +374,8 @@ float ofxStrokeUtil::getTotalAngle(ofPath p){
     if(p.hasOutline()){
         float meanAbsAngle = 0;
         for(ofPolyline polyLine: p.getOutline()){
-            if(p.getVertices().size() > 2){
-                for(int i=0; i<p.getVertices().size(); i++){
+            if(polyLine.getVertices().size() > 2){
+                for(int i=0; i<polyLine.getVertices().size(); i++){
                     ofPoint a, b, c;
                     if(i == 0){
                         a = ofVec2f(0,0);
@@ -383,13 +383,13 @@ float ofxStrokeUtil::getTotalAngle(ofPath p){
                     }
                     else if(i == 1){
                         a = ofVec2f(0,0);
-                        b = p.getVertices[i-1];
+                        b = polyLine.getVertices()[i-1];
                     }
                     else{
-                        a = p.getVertices[i-2];
-                        b = p.getVertices[i-1];
+                        a = polyLine.getVertices()[i-2];
+                        b = polyLine.getVertices()[i-1];
                     }
-                    c = p.getVertices[i];
+                    c = polyLine.getVertices()[i];
                     
                     float theta = getJointAngle(a,b,c);
                     totalAngle += theta;
@@ -408,8 +408,8 @@ float ofxStrokeUtil::getTotalAbsoluteAngle(ofPath p){
     if(p.hasOutline()){
         float meanAbsAngle = 0;
         for(ofPolyline polyLine: p.getOutline()){
-            if(p.getVertices().size() > 2){
-                for(int i=0; i<p.getVertices().size(); i++){
+            if(polyLine.getVertices().size() > 2){
+                for(int i=0; i<polyLine.getVertices().size(); i++){
                     ofPoint a, b, c;
                     if(i == 0){
                         a = ofVec2f(0,0);
@@ -417,19 +417,19 @@ float ofxStrokeUtil::getTotalAbsoluteAngle(ofPath p){
                     }
                     else if(i == 1){
                         a = ofVec2f(0,0);
-                        b = p.getVertices[i-1];
+                        b = polyLine.getVertices()[i-1];
                     }
                     else{
-                        a = p.getVertices[i-2];
-                        b = p.getVertices[i-1];
+                        a = polyLine.getVertices()[i-2];
+                        b = polyLine.getVertices()[i-1];
                     }
-                    c = p.getVertices[i];
+                    c = polyLine.getVertices()[i];
                     
                     float theta = abs(getJointAngle(a,b,c));
                     
                     totalAngle += theta;
                     
-                    if((theta > cornerThreshold) && (i>1) && (i<(p.getVerticies.size()-1)))
+                    if((theta > cornerThreshold) && (i>1) && (i<(polyLine.getVertices().size()-1)))
                         nCorners++;
                 }
             }
@@ -442,7 +442,7 @@ float ofxStrokeUtil::getMeanAngle(ofPath p){
     float angle = getTotalAngle(p);
     float count = 0;
     if(p.hasOutline()){
-        for(ofPolyline polyline: p.getOutline){
+        for(ofPolyline polyline: p.getOutline()){
             count += polyline.getVertices().size();
         }
     }
@@ -455,7 +455,7 @@ float ofxStrokeUtil::getMeanAbsoluteAngle(ofPath p){
     float angle = getTotalAbsoluteAngle(p);
     float count = 0;
     if(p.hasOutline()){
-        for(ofPolyline polyline: p.getOutline){
+        for(ofPolyline polyline: p.getOutline()){
             count += polyline.getVertices().size();
         }
     }
@@ -473,8 +473,8 @@ float ofxStrokeUtil::getStdDevAbsoluteAngle(ofPath p){
     if(p.hasOutline()){
         float meanAbsAngle = 0;
         for(ofPolyline polyLine: p.getOutline()){
-            if(p.getVertices().size() > 2){
-                for(int i=0; i<p.getVertices().size(); i++){
+            if(polyLine.getVertices().size() > 2){
+                for(int i=0; i<polyLine.getVertices().size(); i++){
                     ofPoint a, b, c;
                     if(i == 0){
                         a = ofVec2f(0,0);
@@ -482,13 +482,13 @@ float ofxStrokeUtil::getStdDevAbsoluteAngle(ofPath p){
                     }
                     else if(i == 1){
                         a = ofVec2f(0,0);
-                        b = p.getVertices[i-1];
+                        b = polyLine.getVertices()[i-1];
                     }
                     else{
-                        a = p.getVertices[i-2];
-                        b = p.getVertices[i-1];
+                        a = polyLine.getVertices()[i-2];
+                        b = polyLine.getVertices()[i-1];
                     }
-                    c = p.getVertices[i];
+                    c = polyLine.getVertices()[i];
                     
                     float theta = abs(getJointAngle(a,b,c));
                     float difFromMean = theta - meanAbsAngle;
@@ -846,8 +846,81 @@ vector<float> ofxStrokeUtil::getMoments(ofPath p){
     
 }
 
+/*-----------------------------------------------*/
 
 
+ofHull::ofHull(ofPath p){
+    
+    depth = 0;
+    vector<ofPoint> points, above, below;
+    
+    if(p.hasOutline()){
+        for(ofPolyline polyline: p.getOutline()){
+            for(ofPoint vertex: polyline.getVertices()){
+                points.push_back(vertex);
+            }
+        }
+    }
+    if(points.size() > 3){
+        ofPoint left, right;
+        //just sort the vector via the x coord rather than
+        //looking individually at each point to find the
+        //min and max
+        std::sort(points.begin(), points.end(), ofHull::xCoordComparator);
+        left = points.front();
+        right = points.back();
+        
+        //test each point to see if it is over or under the
+        //line formed by min and max. 
+        for(ofPoint point: points){
+            if( (point != left) && (point != right)){
+                if(onLeft(left, right, point)){
+                    above.push_back(point);
+                }
+                else {
+                    below.push_back(point);
+                }
+            }
+        }
+        
+        //add min and max to each group
+        above.push_back(left);
+        above.push_back(right);
+        below.push_back(left);
+        below.push_back(right);
+    }
+}
+
+ofHull::ofHull(ofPolyline p){
+    
+}
+
+//determine if p is lying on the left or right side of the
+//first point lying on the line formed by a and b
+bool ofHull::onLeft(ofPoint a, ofPoint b, ofPoint p){
+    if(a.x == b.x){
+        if(p.x < a.x)
+            return true;
+        else{
+            if(p.x == a.x){
+                if (((p.y > a.y) && (p.y < b.y)) || ((p.y > b.y) && (p.y < a.y)))
+                    return true;
+                else
+                    return false;
+            }
+            else {
+                return false;
+            }
+        }
+    }
+    else{
+        //DEBUG :: ask golan about "feh"
+    }
+}
+
+void ofHull::quickHull(){
+    
+}
 
 
 
