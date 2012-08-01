@@ -30,10 +30,14 @@ class ofxStrokeUtil{
         float getStdDevDistanceFromCentroid(ofPolyline p);
         float getStdDevDistanceFromPoint(ofPolyline p, ofPoint point, float meanDistance);
     
-        float getStandardDeviatedVelocity(ofPath p);
-        float getStandardDeviatedVelocity(ofPolyline p);
-        float getMeanVelocity(ofPath p);
-        float getMeanVelocity(ofPolyline p);
+        float getStdDevSpeed(ofPath p);
+        float getStdDevSpeed(ofPolyline p);
+        float getMeanSpeed(ofPath p);
+        float getMeanSpeed(ofPolyline p);
+    
+        ofPoint getMeanVelocity(ofPath p);
+        ofPoint getMeanVelocity(ofPolyline p);
+    
         float getAspectRatio(ofPath p);
         float getAspectRatio(ofPolyline p);
         float getArcLength(ofPath p);
@@ -41,23 +45,30 @@ class ofxStrokeUtil{
         int getSelfIntersections(ofPolyline tag);
         int getSelfIntersections(ofPath tag);
     
-        //suspect
         ofVec2f getOrientation(ofPath p);
-        ofVec4f getVelocityOrientation(ofPath p); //return type?? ofVec4f or vector<float>
+        ofVec2f getVelocityOrientation(ofPath p);
     
-        float getHullPointPercentage(ofPath p); // if the hull is just an outline, usefullness?
-        float getPointDensity(ofPath p);  //number of points/hullArea, usefullness/accuracy?
-        float getCompactness(ofPath p); //relies on hull, useful?
-        vector<float> getTotalAngle(ofPath p); //split into multiple function? Terrible style to return huge vector of info
-    
-        //toDo
+        float getTotalAngle(ofPath p); 
+        float getTotalAbsoluteAngle(ofPath p);
+        float getMeanAngle(ofPath p);
+        float getMeanAbsoluteAngle(ofPath p);
         float getStdDevAbsoluteAngle(ofPath p);
-        float getJointAngle(ofVec2f a, ofVec2f b, ofVec2f c); //changed input from seperate floats
-        float getMoments(ofPath p);
+        float getNumberofCorners(ofPath p);
+    
+        vector<float> getMoments(ofPath p);
+    
+        //suspect
+        float getHullPointPercentage(ofPath p); 
+        float getPointDensity(ofPath p); 
+        float getCompactness(ofPath p); 
     
     private:
+        float corners;
+        float stdDevAbsAngle;
+    
         bool testIntersect(ofPoint a, ofPoint b, ofPoint c, ofPoint d);  
         int getIntersections(ofPolyline a, ofPolyline b);
         ofVec2f calculateMajorAxis(float a, float b, float c, float d); 
+        float getJointAngle(ofVec2f a, ofVec2f b, ofVec2f c);
         
 };
