@@ -2,11 +2,13 @@
 #include "ofxStrokeUtil.h"
 #include <math.h>
 
+
+
 float ofxStrokeUtil::getStdDevDistanceFromCentroid(ofPath p){
     float stdDevDistance = 0;
     float meanDistance = getMeanDistanceFromCentroid(p);
     ofPoint centroid = getCentroid(p);
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         for(ofPolyline polyline: p.getOutline()){
             stdDevDistance += getStdDevDistanceFromPoint(polyline, centroid, meanDistance);
         }
@@ -48,7 +50,7 @@ float ofxStrokeUtil::getStdDevDistanceFromPoint(ofPolyline p, ofPoint point, flo
 float ofxStrokeUtil::getMeanDistanceFromCentroid(ofPath p){
     ofPoint centroid = getCentroid(p);
     float meanDist = 0;
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         for(ofPolyline polyline: p.getOutline()){
             meanDist += getMeanDistanceFromPoint(polyline, centroid);
         }
@@ -83,7 +85,7 @@ float ofxStrokeUtil::getMeanDistanceFromPoint(ofPolyline p, ofPoint point){
  *---------------------------------------------------*/
 float ofxStrokeUtil::getStdDevSpeed(ofPath p){
     float speed = 0;
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         for(ofPolyline polyline: p.getOutline()){
             speed += getStdDevSpeed(polyline);
         }
@@ -118,7 +120,7 @@ float ofxStrokeUtil::getStdDevSpeed(ofPolyline p){
  *---------------------------------------------------*/
 float ofxStrokeUtil::getMeanSpeed(ofPath p){
     float meanSpeed = 0;
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         for(ofPolyline polyline: p.getOutline()){
             meanSpeed += getMeanSpeed(polyline);
         }
@@ -149,12 +151,12 @@ float ofxStrokeUtil::getMeanSpeed(ofPolyline p){ //DEBUG :: get rid of count var
  *---------------------------------------------------*/
 ofPoint ofxStrokeUtil::getMeanVelocity(ofPath p){
     ofPoint meanVel;
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         for(ofPolyline polyline: p.getOutline()){
             meanVel += getMeanVelocity(polyline);
         }
     }
-    return meanVel/p.getOutline.size(); 
+    return meanVel/p.getOutline().size(); 
 }
 
 ofPoint ofxStrokeUtil::getMeanVelocity(ofPolyline p){
@@ -182,7 +184,7 @@ ofPoint ofxStrokeUtil::getMeanVelocity(ofPolyline p){
  *---------------------------------------------------*/
 ofVec2f ofxStrokeUtil::getOrientation(ofPath p){
     ofVec2f eigenvector;
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         ofPoint centroid = getCentroid(p); //DEBUG:: adjust if function moved to ofPath
         
         float XXsum = 0;
@@ -210,7 +212,7 @@ ofVec2f ofxStrokeUtil::getVelocityOrientation(ofPath p){
     float YYsum = 0; 
     float XYsum = 0;
     
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         ofPoint meanVel = getMeanVelocity(p);
         for(ofPolyline polyline: p.getOutline()){
             for(int i=1; i<polyline.getVertices().size(); i++){
@@ -278,7 +280,7 @@ ofVec2f ofxStrokeUtil::calculateMajorAxis(float A, float B, float C, float D){
 float ofxStrokeUtil::getArcLength(ofPath p){
     
     float arcLength;
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         for(ofPolyline polyline : p.getOutline()){
             arcLength += getArcLength(polyline);
         }  
@@ -304,7 +306,7 @@ float ofxStrokeUtil::getArcLength(ofPolyline p){
 float ofxStrokeUtil::getArea(ofPath p){
     
     float area = 0;
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         for(ofPolyline polyline: p.getOutline()){
             area += polyline.getArea();
         }
@@ -314,7 +316,7 @@ float ofxStrokeUtil::getArea(ofPath p){
     
 ofPoint ofxStrokeUtil::getCentroid(ofPath p){
     ofPoint centroid; //DEBUG :: check if this autoinitalizes to 0
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         for(ofPolyline polyline: p.getOutline()){
             centroid += polyline.getCentroid2D();
         }
@@ -327,7 +329,7 @@ ofPoint ofxStrokeUtil::getCentroid(ofPath p){
 ofRectangle ofxStrokeUtil::getBoundingBox(ofPath p){
     //based off of the corresponding ofPolyline function
     ofRectangle box;
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         box.set(0,0,0,0);
         for(ofPolyline polyline: p.getOutline()){
             for(ofPoint vertex: polyline.getVertices()){
@@ -371,7 +373,7 @@ float ofxStrokeUtil::getAspectRatio(ofPolyline p){
 float ofxStrokeUtil::getTotalAngle(ofPath p){
     
     float totalAngle = 0;
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         float meanAbsAngle = 0;
         for(ofPolyline polyLine: p.getOutline()){
             if(polyLine.getVertices().size() > 2){
@@ -405,7 +407,7 @@ float ofxStrokeUtil::getTotalAbsoluteAngle(ofPath p){
     float nCorners = 0;
     float cornerThreshold = (30*PI)/180;
     
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         float meanAbsAngle = 0;
         for(ofPolyline polyLine: p.getOutline()){
             if(polyLine.getVertices().size() > 2){
@@ -441,7 +443,7 @@ float ofxStrokeUtil::getTotalAbsoluteAngle(ofPath p){
 float ofxStrokeUtil::getMeanAngle(ofPath p){
     float angle = getTotalAngle(p);
     float count = 0;
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         for(ofPolyline polyline: p.getOutline()){
             count += polyline.getVertices().size();
         }
@@ -454,7 +456,7 @@ float ofxStrokeUtil::getMeanAngle(ofPath p){
 float ofxStrokeUtil::getMeanAbsoluteAngle(ofPath p){
     float angle = getTotalAbsoluteAngle(p);
     float count = 0;
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         for(ofPolyline polyline: p.getOutline()){
             count += polyline.getVertices().size();
         }
@@ -470,7 +472,7 @@ float ofxStrokeUtil::getStdDevAbsoluteAngle(ofPath p){
     float count = 0;
     float meanAbsAngle = getMeanAbsoluteAngle(p);
     
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         float meanAbsAngle = 0;
         for(ofPolyline polyLine: p.getOutline()){
             if(polyLine.getVertices().size() > 2){
@@ -729,7 +731,7 @@ vector<float> ofxStrokeUtil::getMoments(ofPath p){
         moments.push_back(0);
     
     int numPoints =0;
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         for(ofPolyline polyline: p.getOutline()){
             for(ofPoint vertex: polyline.getVertices()){
                 points.push_back(vertex);
@@ -846,15 +848,64 @@ vector<float> ofxStrokeUtil::getMoments(ofPath p){
     
 }
 
+float ofxStrokeUtil::getHullPointPercentage(ofPath p){
+    if(p.getOutline().size() > 0){
+        float numPts = 0;
+        ofHull *h = new ofHull(p);
+        for(ofPolyline polyline: p.getOutline()){
+            for(ofPoint vertex: polyline.getVertices()){
+                numPts++;
+            }
+        }
+        if((h->hull.size() > 3) && (numPts > 3)){
+            float dMin = 0;
+            float dMax = 1;
+            float percentage = (float)(h->hull.size())/numPts;
+            return min(dMax, max(dMin, percentage));
+        }
+    }
+    return 0;
+}
+
+float ofxStrokeUtil::getCompactness(ofPath p){
+    float compactness = 0;
+    if(p.getOutline().size() > 0){
+        ofHull *h = new ofHull(p);
+        float arcLength = getArcLength(p);
+        float area = h->getArea();
+        if((area > 0) && (arcLength > 0)){
+            compactness = (arcLength*arcLength)/area;
+            compactness = sqrt(compactness);
+        }
+    }
+    return compactness;
+}
+
+float ofxStrokeUtil::getPointDensity(ofPath p){
+    if(p.getOutline().size() > 0){
+        float numPts = 0;
+        ofHull *h = new ofHull(p);
+        for(ofPolyline polyline: p.getOutline()){
+            for(ofPoint vertex: polyline.getVertices()){
+                numPts++;
+            }
+        }
+        if(numPts > 3){
+            float area = h->getArea();
+            if(area > 0)
+                return float(numPts/area);
+        }
+    }
+    return 0;
+}
+
 /*-----------------------------------------------*/
-
-
 ofHull::ofHull(ofPath p){
     
     depth = 0;
     vector<ofPoint> points, above, below;
     
-    if(p.hasOutline()){
+    if(p.getOutline().size() > 0){
         for(ofPolyline polyline: p.getOutline()){
             for(ofPoint vertex: polyline.getVertices()){
                 points.push_back(vertex);
@@ -874,7 +925,8 @@ ofHull::ofHull(ofPath p){
         //line formed by min and max. 
         for(ofPoint point: points){
             if( (point != left) && (point != right)){
-                if(onLeft(left, right, point)){
+                //if(onLeft(left, right, point)){
+                if(direction(left, right, point) < 0){
                     above.push_back(point);
                 }
                 else {
@@ -883,16 +935,61 @@ ofHull::ofHull(ofPath p){
             }
         }
         
-        //add min and max to each group
-        above.push_back(left);
-        above.push_back(right);
-        below.push_back(left);
-        below.push_back(right);
+        //calculate the upper hull
+        vector<ofPoint> tempHull;
+        golanQuickHull(above, hull, left, right, 0, 0);
+        hull.push_back(left);
+        hull.push_back(right);
+        std::sort(hull.begin(), hull.end(), ofHull::xCoordComparator);
+        golanQuickHull(below, tempHull, left, right, 1, 0);
+        std::sort(tempHull.begin(), tempHull.end(), ofHull::xCoordComparator);
+        for(int i=tempHull.size()-1; i>=0; i--){
+            hull.push_back(tempHull[i]);
+        }
     }
 }
 
 ofHull::ofHull(ofPolyline p){
     
+}
+
+void ofHull::renderHull(){
+    if(hull.size() > 0){
+        ofBeginShape();
+        for(ofPoint p : hull)
+            ofVertex(p.x, p.y);
+        ofEndShape();
+    }
+}
+void ofHull::renderHullPoints(){
+    if(hull.size() > 0){
+        for(ofPoint p: hull)
+            ofCircle(p.x, p.y, 2);
+    }
+}
+
+float ofHull::getArea(){
+    float area = 0;
+    if(hull.size() > 2){
+        for(int i=0; i < hull.size()-1; i++){
+            ofPoint p0 = hull[i];
+            ofPoint p1 = hull[i+1];
+            area += (p0.x*p1.y)-(p0.y*p1.x);
+        }
+        area = abs(0.5*area);
+    }
+    return area;
+}
+
+//Alex's slightly cleaner implementation of the onLeft implementation
+//DEBUG:: needs testing
+
+//translate the rightmost point to the origin, and then take the cross
+//product of left and p. The function will return positive if p is
+//on the right, negative if its on the left, or 0 if it is on the line
+
+int ofHull::direction(ofPoint left, ofPoint right, ofPoint p){
+    return((left.x-right.x)*(p.y-right.y)) - ((p.x-right.x)*(left.y-right.y));
 }
 
 //determine if p is lying on the left or right side of the
@@ -914,13 +1011,184 @@ bool ofHull::onLeft(ofPoint a, ofPoint b, ofPoint p){
         }
     }
     else{
-        //DEBUG :: ask golan about "feh"
+        //DEBUG :: super sketch
+        float slope = (b.y - a.y) / (b.x - a.x);
+        float x3    = (((p.x + slope * (slope * a.x - a.y + p.y)) /  (1.0 + slope * slope)) * 10000.0 );
+        float y3    = ((slope * (x3 / 10000 - a.x) + a.y) * 10000.0 );
+        
+        if (slope == 0.0) {
+            if ((p.y * 10000.0 ) > y3) 
+                return true; 
+            else 
+                return false;
+        }
+        
+        else { 
+            if (slope > 0.0 ) {
+                if (x3 > (p.x * 10000.0 )) 
+                    return true; 
+                else 
+                    return false;
+            }
+            
+            else {
+                if ((p.x * 10000.0 ) > x3) 
+                    return true; 
+                else 
+                    return false;
+            }
+        }
     }
 }
 
 //recursive hull finding method
-void ofHull::quickHull(){
+//let's call the line segment formed by left and right, line LR.
+//from a given set of points, all on the same side of LR, find
+//the farthest, F. Partition the remaining points into 3 subsets
+//depending on whether they are inside the triangle formed by
+//LRF, on the right side of the line formed by L and F, or on
+//on the right of F to R
+
+void ofHull::golanQuickHull(vector<ofPoint> p, vector<ofPoint> &output, ofPoint left, ofPoint right, int dir, int depth){
+    int MAX_RECURSION_DEPTH = 1000; //meh
+    if((p.size() == 2) || (depth > MAX_RECURSION_DEPTH)){
+        ofPoint point = p[0];
+        output.push_back(point);
+        p.clear();
+        return;
+    }
+    else{
+        depth++;
+        
+        vector<ofPoint> p1; 
+        vector<ofPoint> p2;
+        ofPoint curPoint;
+        int farthestIndex = splitAt(p, left, right);
+        ofPoint farthest = p[farthestIndex];
+        
+        for(int i=0; i<p.size()-2; i++){
+            if(i != farthestIndex){
+                curPoint = p[i];
+                if(dir == 0){ //finding top Hull
+                    if(onLeft(left, farthest, curPoint)){
+                        p1.push_back(curPoint);
+                    }
+                    if(onLeft(farthest, right, curPoint)){
+                        p2.push_back(curPoint);
+                    }
+                }
+                else{ //finding bottom hull
+                    if(!onLeft(left, farthest, curPoint)){
+                        p1.push_back(curPoint);
+                    }
+                    if(!onLeft(farthest, right, curPoint)){
+                        p2.push_back(curPoint);
+                    }
+                }
+            }
+        }
+        
+        p1.push_back(left);
+        p1.push_back(farthest); //DEBUG:: looks like to me, P1 will only
+        p2.push_back(farthest); //ever add left to the output array, and
+        p2.push_back(right); //not the farthest it finds
+        
+        if(dir == 0){
+            golanQuickHull(p1, output, left, farthest, 0, depth);
+            golanQuickHull(p2, output, farthest, right, 0, depth);
+        }
+        else{
+            golanQuickHull(p1, output, left, farthest, 1, depth);
+            golanQuickHull(p2, output, farthest, right, 1, depth);
+        }
+        
+    }
+}
+void ofHull::quickHull(vector<ofPoint> p, vector<ofPoint> &output, ofPoint left, ofPoint right, int dir, int depth){
+    int MAX_RECURSION_DEPTH = 1000; //meh
+    if((p.size() == 0) || (depth > MAX_RECURSION_DEPTH)){
+        return;
+    }
+    else{
+        depth++;
+        
+        vector<ofPoint> p1; 
+        vector<ofPoint> p2;
+        ofPoint curPoint;
+        int farthestIndex = splitAt(p, left, right);
+        ofPoint farthest = p[farthestIndex];
+        output.push_back(farthest);
+        
+        for(int i=0; i<p.size()-1; i++){
+            if(i != farthestIndex){
+                curPoint = p[i];
+                if(dir == 0){ //finding top Hull
+                    if(onLeft(left, farthest, curPoint)){
+                        p1.push_back(curPoint);
+                    }
+                    if(onLeft(farthest, right, curPoint)){
+                        p2.push_back(curPoint);
+                    }
+                }
+                else{ //finding bottom hull
+                    if(!onLeft(left, farthest, curPoint)){
+                        p1.push_back(curPoint);
+                    }
+                    if(!onLeft(farthest, right, curPoint)){
+                        p2.push_back(curPoint);
+                    }
+                }
+            }
+        }
+        if(dir == 0){
+            quickHull(p1, output, left, farthest, 0, depth);
+            quickHull(p2, output, farthest, right, 0, depth);
+        }
+        else{
+            quickHull(p1, output, left, farthest, 1, depth);
+            quickHull(p2, output, farthest, right, 1, depth);
+        }
+    }
+}
+
+
+//Find  a point which is certain to be in the Hull, from among a group of points
+//All the given points are on the same side of the line formed by l and r,
+//so the point with the longest distance perpendicular to this line is 
+//the point we are looking for.  Return the index of this point in the Vector.
+int ofHull::splitAt(vector<ofPoint> p, ofPoint l, ofPoint r){
+    float denom = r.x-l.x;
+    if (r.x == l.x) { 
+        denom = 0.00001; //DEBUG:: is this neccessary?
+    }
     
+    float slope = (r.y-l.y)/denom;
+    float farthestIndex = 0;
+    float maxDist = 0;
+    ofPoint perpPoint;
+    
+    for(int i=0; i<p.size()-1; i++){
+        ofPoint testPoint = p[i];
+        //find the point on the line between l and r that
+        //is perpendicular to the one we're testing
+        if(r.y == l.y){ //horizontal line
+            perpPoint.x = testPoint.x;
+            perpPoint.y = l.y;
+        }
+        else{
+            perpPoint.x = (testPoint.x + slope*(slope*l.x-l.y+testPoint.y))/(1+slope*slope);
+            perpPoint.y = slope*(perpPoint.x - l.x) + l.y;
+        }
+        
+        //check if it is farther than our current farthestPoint
+        float distance = testPoint.distance(perpPoint);
+        if(distance > maxDist){
+            maxDist = distance;
+            farthestIndex = i;
+        }
+    }
+    
+    return farthestIndex;
 }
 
 

@@ -13,8 +13,8 @@
 class ofxStrokeUtil{
     
     public:
-        ofxStrokeUtil();
-        ~ofxStrokeUtil();
+        //ofxStrokeUtil();
+        //~ofxStrokeUtil();
     
         //should go into ofPath
         ofRectangle getBoundingBox(ofPath p);
@@ -57,10 +57,11 @@ class ofxStrokeUtil{
     
         vector<float> getMoments(ofPath p);
     
-        //suspect
+        //hull functions
         float getHullPointPercentage(ofPath p); 
         float getPointDensity(ofPath p); 
         float getCompactness(ofPath p); 
+    
     
     private:
         float corners;
@@ -79,11 +80,15 @@ class ofHull{
         ofHull(ofPath p);
         ofHull(ofPolyline p);
     
-        void draw();
-        void quickHull();
+        void renderHull();
+        void renderHullPoints();
+        void buildHalfHull(vector<ofPoint> sortedPoints, ofPoint left, ofPoint right,vector<ofPoint> &output, int dir);
+        void golanQuickHull(vector<ofPoint> input, vector<ofPoint> &output, ofPoint left, ofPoint right, int dir, int depth);
+        void quickHull(vector<ofPoint> input, vector<ofPoint> &output, ofPoint left, ofPoint right, int dir, int depth);
+        int direction(ofPoint left, ofPoint right, ofPoint p);
         bool onLeft(ofPoint left, ofPoint right, ofPoint p);
         int splitAt(vector<ofPoint> p, ofPoint l, ofPoint r);
-    
+        float getArea();
         vector<ofPoint> hull;
         int depth;
     
