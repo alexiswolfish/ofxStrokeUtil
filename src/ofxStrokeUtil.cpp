@@ -313,8 +313,25 @@ float ofxStrokeUtil::getArea(ofPath p){
     }
     return area;
 }
-    
+
+//not sure if this is really the "centroid", its more the average, or "center"
 ofPoint ofxStrokeUtil::getCentroid(ofPath p){
+    ofPoint centroid;
+    float numPts = 0;
+    if(p.getOutline().size() > 0){
+        for(ofPolyline polyline: p.getOutline()){
+            for(ofPoint vertex: polyline.getVertices()){
+                centroid += vertex;
+                numPts++;
+            }
+        }
+        if(numPts > 0)
+            centroid/=numPts;
+    }
+    return centroid;
+}
+    
+/*ofPoint ofxStrokeUtil::getCentroid(ofPath p){
     ofPoint centroid; //DEBUG :: check if this autoinitalizes to 0
     if(p.getOutline().size() > 0){
         for(ofPolyline polyline: p.getOutline()){
@@ -323,14 +340,14 @@ ofPoint ofxStrokeUtil::getCentroid(ofPath p){
         centroid/=p.getOutline().size();
     }
     return centroid;
-}
+}*/
 
 //this might make more sense to put in ofPath
 ofRectangle ofxStrokeUtil::getBoundingBox(ofPath p){
     //based off of the corresponding ofPolyline function
     ofRectangle box;
     if(p.getOutline().size() > 0){
-        box.set(0,0,0,0);
+        box.set(MAXFLOAT,MAXFLOAT,0,0);
         for(ofPolyline polyline: p.getOutline()){
             for(ofPoint vertex: polyline.getVertices()){
                 if(vertex.x < box.x){
@@ -616,19 +633,15 @@ float ofxStrokeUtil::getJointAngle(ofVec2f a, ofVec2f b, ofVec2f c){
 /*---------------------------------------------------*
  Returns the number of times an ofPath intersects with itself
  *---------------------------------------------------*/
-int ofxStrokeUtil::getSelfIntersections(ofPath tag){
+vector<ofPoint> ofxStrokeUtil::getSelfIntersections(ofPath tag){
     
-    //Paths verses polylines.
-    //Either use a template with generics or ALWAYS convert to polyline?
-    
-    //this needs to be tested to MAKE SURE it doesn't break,
-    //regardless of the MODE. I think we're good though
-    vector<ofPolyline> strokes = tag.getOutline(); //converts to polyline regardless of MODE
-    int intersections = 0;
+    vector<ofPolyline> strokes = tag.getOutline();
+    vector<ofPoint> intersections;
     
     for(ofPolyline p1 : strokes){
         for(ofPolyline p2 : strokes){
-            intersections += getIntersections(p1, p2);
+            for(ofPoint i : getIntersections(p1, p2)){
+                intersections.push_back(i);}
         }
     }
     return intersections;
@@ -638,17 +651,17 @@ int ofxStrokeUtil::getSelfIntersections(ofPath tag){
  Returns the number of times a single Polyline intersects
  with itself.
  *---------------------------------------------------*/
-int ofxStrokeUtil::getSelfIntersections(ofPolyline tag){
+vector<ofPoint> ofxStrokeUtil::getSelfIntersections(ofPolyline tag){
     return(getIntersections(tag, tag));
 }
 
 /*---------------------------------------------------*
  Tests the line a-b against c-d for intersection.
  *---------------------------------------------------*/
-bool ofxStrokeUtil::testIntersect(ofPoint a, ofPoint b, ofPoint c, ofPoint d){
+ofPoint* ofxStrokeUtil::testIntersect(ofPoint a, ofPoint b, ofPoint c, ofPoint d){
     
     float denominator, numerator, alpha, beta;
-    
+    ofPoint* intersect;
     float Ax = b.x - a.x;
     float Ay = b.y - a.y;
     float Bx = c.x - d.x;
@@ -657,7 +670,7 @@ bool ofxStrokeUtil::testIntersect(ofPoint a, ofPoint b, ofPoint c, ofPoint d){
     float Cy = a.y - c.y;
     
     denominator = (Ay*Bx) - (Ax*By);
-    numerator = (Ax*Cy) - (Ay*Cx);
+    numerator = (Ax*Cy) - (Ay*Cx); ///numerab
     
     if(denominator != 0){
         alpha = numerator/denominator;
@@ -665,29 +678,32 @@ bool ofxStrokeUtil::testIntersect(ofPoint a, ofPoint b, ofPoint c, ofPoint d){
             numerator = (By*Cx) - (Bx*Cy);
             beta = numerator/denominator;
             if((beta > 0.0) && (beta < 1.0)){
-                return true;
+                float x = c.x + beta*(d.x-c.x);
+                float y = c.y + beta*(d.y-c.y);
+                intersect->set(x, y);
+                return intersect;
             }
         }
     }
     
-    return false;
+    return NULL; //case for when the intersection is (0,0)?
     
 }
 
-int ofxStrokeUtil::getIntersections(ofPolyline a, ofPolyline b){
-    int intersections = 0;
+vector<ofPoint> ofxStrokeUtil::getIntersections(ofPolyline a, ofPolyline b){
+    vector<ofPoint> intersections;
     vector<ofPoint> aPoints = a.getVertices();
     vector<ofPoint> bPoints = b.getVertices();
     
     for(int j=1; j<aPoints.size(); j++){
         ofPoint a1 = aPoints[j-1];
         ofPoint a2 = aPoints[j];
-        for(int k=1; j<bPoints.size(); k++){
+        for(int k=1; k<bPoints.size(); k++){
             ofPoint b1 = bPoints[k-1];
             ofPoint b2 = bPoints[k];
-            
-            if(testIntersect(a1, a2, b1, b2))
-                intersections++;
+            ofPoint* test = testIntersect(a1, a2, b1, b2);
+            if(test != NULL)
+                intersections.push_back(*test);
         }
     }
     return intersections;
@@ -934,6 +950,12 @@ ofHull::ofHull(ofPath p){
                 }
             }
         }
+        
+        //add left and right to each set
+        above.push_back(left);
+        above.push_back(right);
+        below.push_back(left);
+        below.push_back(right);
         
         //calculate the upper hull
         vector<ofPoint> tempHull;

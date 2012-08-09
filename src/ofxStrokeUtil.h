@@ -42,8 +42,8 @@ class ofxStrokeUtil{
         float getAspectRatio(ofPolyline p);
         float getArcLength(ofPath p);
         float getArcLength(ofPolyline p);
-        int getSelfIntersections(ofPolyline tag);
-        int getSelfIntersections(ofPath tag);
+        vector<ofPoint> getSelfIntersections(ofPolyline tag);
+        vector<ofPoint> getSelfIntersections(ofPath tag);
     
         ofVec2f getOrientation(ofPath p);
         ofVec2f getVelocityOrientation(ofPath p);
@@ -67,8 +67,8 @@ class ofxStrokeUtil{
         float corners;
         float stdDevAbsAngle;
     
-        bool testIntersect(ofPoint a, ofPoint b, ofPoint c, ofPoint d);  
-        int getIntersections(ofPolyline a, ofPolyline b);
+        ofPoint* testIntersect(ofPoint a, ofPoint b, ofPoint c, ofPoint d);  
+        vector<ofPoint> getIntersections(ofPolyline a, ofPolyline b);
         ofVec2f calculateMajorAxis(float a, float b, float c, float d); 
         float getJointAngle(ofVec2f a, ofVec2f b, ofVec2f c);
         
