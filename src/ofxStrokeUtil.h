@@ -17,11 +17,11 @@ class ofxStrokeUtil{
         //~ofxStrokeUtil();
     
         //should go into ofPath
+        float getArea(ofPath p);
         ofRectangle getBoundingBox(ofPath p);
         ofPoint getCentroid(ofPath p);
-        float getArea(ofPath p);
-        
-        //finished
+        ofPoint getCenterOfMass(ofPath p);
+    
         float getMeanDistanceFromCentroid(ofPath p);
         float getMeanDistanceFromCentroid(ofPolyline p);
         float getMeanDistanceFromPoint(ofPolyline p, ofPoint centroid);
@@ -31,7 +31,7 @@ class ofxStrokeUtil{
         float getStdDevDistanceFromPoint(ofPolyline p, ofPoint point, float meanDistance);
     
         float getStdDevSpeed(ofPath p);
-        float getStdDevSpeed(ofPolyline p);
+        float getStdDevSpeed(ofPolyline p, float meanSpeed);
         float getMeanSpeed(ofPath p);
         float getMeanSpeed(ofPolyline p);
     
@@ -66,11 +66,14 @@ class ofxStrokeUtil{
     private:
         float corners;
         float stdDevAbsAngle;
-    
-        ofPoint* testIntersect(ofPoint a, ofPoint b, ofPoint c, ofPoint d);  
+        
+        double perpDot(ofVec2f a, ofVec2f b);
+        bool contains(ofPoint a, vector<ofPoint> b);
+        bool testIntersect(ofPoint a, ofPoint b, ofPoint c, ofPoint d, ofPoint &intersection);  
         vector<ofPoint> getIntersections(ofPolyline a, ofPolyline b);
         ofVec2f calculateMajorAxis(float a, float b, float c, float d); 
         float getJointAngle(ofVec2f a, ofVec2f b, ofVec2f c);
+        
         
 };
 

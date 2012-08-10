@@ -13,6 +13,7 @@ float ofxStrokeUtil::getStdDevDistanceFromCentroid(ofPath p){
             stdDevDistance += getStdDevDistanceFromPoint(polyline, centroid, meanDistance);
         }
     }
+    return stdDevDistance/p.getOutline().size();
 }
 float ofxStrokeUtil::getStdDevDistanceFromCentroid(ofPolyline p){
     float stdDevDistance = 0;
@@ -86,25 +87,26 @@ float ofxStrokeUtil::getMeanDistanceFromPoint(ofPolyline p, ofPoint point){
 float ofxStrokeUtil::getStdDevSpeed(ofPath p){
     float speed = 0;
     if(p.getOutline().size() > 0){
+        int meanSpeed = getMeanSpeed(p);
         for(ofPolyline polyline: p.getOutline()){
-            speed += getStdDevSpeed(polyline);
+            speed += getStdDevSpeed(polyline, meanSpeed);
         }
     }
-    return speed;
+    return speed/p.getOutline().size();
 }
 
-float ofxStrokeUtil::getStdDevSpeed(ofPolyline p){
+//for a single polyline, input getMeanSpeed(p);
+float ofxStrokeUtil::getStdDevSpeed(ofPolyline p, float meanSpeed){
     float speed = 0;
     float count = 0;
-    float meanVelocity = getMeanSpeed(p);
     
     if(p.getVertices().size() > 0){
-        for(int i=0; i<p.getVertices().size(); i++){
+        for(int i=1; i<p.getVertices().size(); i++){
             ofPoint a = p.getVertices()[i-1];
             ofPoint b = p.getVertices()[i];
             
             ofPoint velocity = b-a;
-            float differenceFromMean = velocity.length() - meanVelocity;
+            float differenceFromMean = velocity.length() - meanSpeed;
             speed += differenceFromMean*differenceFromMean;
             count ++;
         }
@@ -314,7 +316,9 @@ float ofxStrokeUtil::getArea(ofPath p){
     return area;
 }
 
-//not sure if this is really the "centroid", its more the average, or "center"
+/*---------------------------------------------------*
+ returns the true "average" center point of the given path
+ *---------------------------------------------------*/
 ofPoint ofxStrokeUtil::getCentroid(ofPath p){
     ofPoint centroid;
     float numPts = 0;
@@ -330,18 +334,13 @@ ofPoint ofxStrokeUtil::getCentroid(ofPath p){
     }
     return centroid;
 }
-    
-/*ofPoint ofxStrokeUtil::getCentroid(ofPath p){
-    ofPoint centroid; //DEBUG :: check if this autoinitalizes to 0
-    if(p.getOutline().size() > 0){
-        for(ofPolyline polyline: p.getOutline()){
-            centroid += polyline.getCentroid2D();
-        }
-        centroid/=p.getOutline().size();
-    }
-    return centroid;
-}*/
 
+/*---------------------------------------------------*
+ *---------------------------------------------------*/
+ofPoint ofxStrokeUtil::getCenterOfMass(ofPath p){
+    
+}
+    
 //this might make more sense to put in ofPath
 ofRectangle ofxStrokeUtil::getBoundingBox(ofPath p){
     //based off of the corresponding ofPolyline function
@@ -641,10 +640,19 @@ vector<ofPoint> ofxStrokeUtil::getSelfIntersections(ofPath tag){
     for(ofPolyline p1 : strokes){
         for(ofPolyline p2 : strokes){
             for(ofPoint i : getIntersections(p1, p2)){
-                intersections.push_back(i);}
+                if(!contains(i,intersections))
+                    intersections.push_back(i);}
         }
     }
     return intersections;
+}
+
+bool ofxStrokeUtil::contains(ofPoint a, vector<ofPoint> points){
+    for(ofPoint p: points){
+        if(a==p)
+            return true;
+    }
+    return false;
 }
 
 /*---------------------------------------------------*
@@ -652,44 +660,63 @@ vector<ofPoint> ofxStrokeUtil::getSelfIntersections(ofPath tag){
  with itself.
  *---------------------------------------------------*/
 vector<ofPoint> ofxStrokeUtil::getSelfIntersections(ofPolyline tag){
-    return(getIntersections(tag, tag));
+    vector<ofPoint> intersections;
+    vector<ofPoint> aPoints = tag.getVertices();
+    if(aPoints.size() > 3){
+        for(int i=1; i<aPoints.size(); i++){
+            ofPoint a1 = aPoints[i-1];
+            ofPoint a2 = aPoints[i];
+            for(int j=i+1; j<aPoints.size(); j++){
+                ofPoint b1 = aPoints[j-1];
+                ofPoint b2 = aPoints[j];
+                if(a1!=b1 && a2!=b2){
+                    ofPoint test;
+                    if(testIntersect(a1, a2, b1, b2, test))
+                        intersections.push_back(test);
+                }
+            }
+        }
+    }
+    return intersections;
 }
 
 /*---------------------------------------------------*
  Tests the line a-b against c-d for intersection.
  *---------------------------------------------------*/
-ofPoint* ofxStrokeUtil::testIntersect(ofPoint a, ofPoint b, ofPoint c, ofPoint d){
+bool ofxStrokeUtil::testIntersect(ofPoint a1, ofPoint a2, ofPoint b1, ofPoint b2, ofPoint &i){
+   
+    ofVec2f a = a2-a1;
+    ofVec2f b = b2-b1;
+    ofVec2f c = b2-a2;
     
-    float denominator, numerator, alpha, beta;
-    ofPoint* intersect;
-    float Ax = b.x - a.x;
-    float Ay = b.y - a.y;
-    float Bx = c.x - d.x;
-    float By = c.y - d.y;
-    float Cx = a.x - c.y;
-    float Cy = a.y - c.y;
+    double f = perpDot(a,b);
+    if(!f)
+        return false; //lines are parallel
+
+    double aa = perpDot(a,c);
+    double bb = perpDot(b,c);
     
-    denominator = (Ay*Bx) - (Ax*By);
-    numerator = (Ax*Cy) - (Ay*Cx); ///numerab
-    
-    if(denominator != 0){
-        alpha = numerator/denominator;
-        if((alpha > 0.0) && (alpha < 1.0)){
-            numerator = (By*Cx) - (Bx*Cy);
-            beta = numerator/denominator;
-            if((beta > 0.0) && (beta < 1.0)){
-                float x = c.x + beta*(d.x-c.x);
-                float y = c.y + beta*(d.y-c.y);
-                intersect->set(x, y);
-                return intersect;
-            }
-        }
+    if(f<0){
+        if( aa>0 || bb>0 || aa<f || bb<f)
+            return false;
     }
-    
-    return NULL; //case for when the intersection is (0,0)?
-    
+    else{
+        if(aa<0 || bb<0 || aa>f || bb>f)
+            return false;
+    }
+    double mu = 1.0-(aa/f);
+    ofVec2f intersection = ((b2-b1)*mu) + b1;
+    i.set(intersection.x, intersection.y);
+    if(i!= a1 && i!= a2 && i != b1 && i !=b2)
+        return true;
+    else {
+        return false;
+    }
 }
 
+double ofxStrokeUtil::perpDot(ofVec2f a , ofVec2f b){
+    return (a.y*b.x)-(a.x*b.y);
+}
 vector<ofPoint> ofxStrokeUtil::getIntersections(ofPolyline a, ofPolyline b){
     vector<ofPoint> intersections;
     vector<ofPoint> aPoints = a.getVertices();
@@ -701,9 +728,10 @@ vector<ofPoint> ofxStrokeUtil::getIntersections(ofPolyline a, ofPolyline b){
         for(int k=1; k<bPoints.size(); k++){
             ofPoint b1 = bPoints[k-1];
             ofPoint b2 = bPoints[k];
-            ofPoint* test = testIntersect(a1, a2, b1, b2);
-            if(test != NULL)
-                intersections.push_back(*test);
+            ofPoint test;
+                if(testIntersect(a1, a2, b1, b2, test)){
+                    intersections.push_back(test);
+                }
         }
     }
     return intersections;
