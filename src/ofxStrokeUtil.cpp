@@ -243,7 +243,9 @@ ofVec2f ofxStrokeUtil::getVelocityOrientation(ofPath p){
  Finds the major axis that descripes the shape, and how
  strongly oriented to the axis that shape is
  
- 
+ returns: ofVec2f containing the orientation axis's
+          angle from the horizontal axis and then
+          the strength of the orientation.
  *---------------------------------------------------*/
 ofVec2f ofxStrokeUtil::calculateMajorAxis(float A, float B, float C, float D){
     
