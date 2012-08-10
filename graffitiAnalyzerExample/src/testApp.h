@@ -1,60 +1,56 @@
 #pragma once
 
 #include "ofMain.h"
-#include "ofxGui.h"
+#include "ofxXmlSettings.h"
+#include "ofxUI.h"
 #include "ofxStrokeUtil.h"
 
+
 class testApp : public ofBaseApp{
-
-	public:
-		void setup();
-		void update();
-		void draw();
-
-		void keyPressed  (int key);
-		void keyReleased(int key);
-		void mouseMoved(int x, int y );
-		void mouseDragged(int x, int y, int button);
-		void mousePressed(int x, int y, int button);
-		void mouseReleased(int x, int y, int button);
-		void windowResized(int w, int h);
-		void dragEvent(ofDragInfo dragInfo);
-		void gotMessage(ofMessage msg);
     
-        void clearDisplay(bool &pressed);
-        void clear();
-        void analyze();
+public:
     
-        /*-----ofxStrokeUtil-----*/
-        ofxStrokeUtil strokeUtil;
-        vector<string> results;
+    void setup();
+    void update();
+    void draw();
     
-        /*-------Drawing--------*/
-        ofPath curPath;
-        ofRectangle canvas;
-        ofColor curColor;
-        
-       /*---------Gui----------*/
-        ofxPanel panelMain;
-        ofxToggle fillToggle, pathToggle, analyzeToggle;
-        ofxButton newButton, analyzeButton;
-        ofxSlider<float> strokeWidthSlider;
-        
-        ofxPanel panelDisplay;
-        ofxToggle hullToggle;
-        ofxToggle intersectToggle;
-        ofxToggle orientToggle;
-        ofxToggle bBoxToggle;
-        ofxToggle centroidToggle;
-        
-        ofxPanel panelColor;
-        ofxSlider<int> rSlider, gSlider, bSlider;
-        
-        ofRectangle swatch, resultsRec;
-        
-        bool cleared;
-        float guiWidth, guiSpace, canvasHeight;
-        ofColor main, comp1, comp2, comp3, comp4, comp5, comp6;
+    void guiSetup();
     
-		
+    void keyPressed(int key);
+    void keyReleased(int key);
+    void mouseMoved(int x, int y );
+    void mouseDragged(int x, int y, int button);
+    void mousePressed(int x, int y, int button);
+    void mouseReleased(int x, int y, int button);
+    void windowResized(int w, int h);
+    void dragEvent(ofDragInfo dragInfo);
+    void gotMessage(ofMessage msg);
+    
+    void guiEvent(ofxUIEventArgs &e);
+    
+    /*-------Drawing--------*/
+    float strokeWidth;
+    ofPath curPath;
+    ofRectangle canvas;
+    ofColor curColor;
+    
+    /*---------Gui----------*/
+    ofxUICanvas *gui;
+    ofImage samplerImg;
+    float guiWidth, canvasHeight;
+    
+    /*---------Utils--------*/
+    
+    bool useofPath;
+    bool newPath;
+    bool drawOutline;
+    
+    bool testHull;
+    
+    /*----READYSTEADYGO!----*/
+    
+    ofxStrokeUtil strokeUtil;
+    
+    
 };
+
