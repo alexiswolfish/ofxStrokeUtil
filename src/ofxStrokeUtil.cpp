@@ -3,7 +3,301 @@
 #include <math.h>
 
 
+/*---------------------------------------------------*
+ AREA
+ returns: combined area from each polyline in the path
+ TODO: more intelligent function based on the winding
+ model, representative of the area when "filled"
+ *---------------------------------------------------*/
+float ofxStrokeUtil::getArea(ofPath p){
+    
+    float area = 0;
+    if(p.getOutline().size() > 0){
+        for(ofPolyline polyline: p.getOutline()){
+            area += polyline.getArea();
+        }
+    }
+    return area;
+}
 
+/*---------------------------------------------------*
+ CENTROID
+ returns: the true "average" center point of the given path
+ 
+ the getCentroid2D function for polylines only works
+ on closed, non intersecting shapes. Since this is 
+ more often not the case, return the average point
+ *---------------------------------------------------*/
+ofPoint ofxStrokeUtil::getCentroid(ofPath p){
+    ofPoint centroid;
+    float numPts = 0;
+    if(p.getOutline().size() > 0){
+        for(ofPolyline polyline: p.getOutline()){
+            for(ofPoint vertex: polyline.getVertices()){
+                centroid += vertex;
+                numPts++;
+            }
+        }
+        if(numPts > 0)
+            centroid/=numPts;
+    }
+    return centroid;
+}
+
+/*---------------------------------------------------*
+ CENTROID :: center of mass
+ returns: the centroid using the bourke algorithm for
+ non interseting, closed polygons.
+
+ not as simple as averaging all the centroid2d of the polylines
+ *---------------------------------------------------*/
+ofPoint ofxStrokeUtil::getCenterOfMass(ofPath p){
+    
+}
+
+/*---------------------------------------------------*
+ OBB
+ returns: bounding box oriented along the orientation axis.
+ *---------------------------------------------------*/
+vector<ofPoint> getOrientedBoundingBox(ofPath p){
+    
+}
+
+/*---------------------------------------------------*
+ BOUNDING BOX
+ naive bounding box implementation.
+ this might make more sense to put in ofPath
+ *---------------------------------------------------*/
+ofRectangle ofxStrokeUtil::getBoundingBox(ofPath p){
+    //based off of the corresponding ofPolyline function
+    ofRectangle box;
+    if(p.getOutline().size() > 0){
+        box.set(MAXFLOAT,MAXFLOAT,0,0);
+        for(ofPolyline polyline: p.getOutline()){
+            for(ofPoint vertex: polyline.getVertices()){
+                if(vertex.x < box.x){
+                    box.x = vertex.x;
+                }
+                if(vertex.x > box.width){
+                    box.width = vertex.x;
+                }
+                if(vertex.y < box.y){
+                    box.y = vertex.y;
+                }
+                if(vertex.y > box.height){
+                    box.height = vertex.y;
+                }
+            }
+        }
+        box.width -= box.x;
+        box.height -= box.y;
+    }
+    return box;
+}
+
+/*---------------------------------------------------*
+ ASPECT RATIO
+ naive aspect ratio implementation. uses naive BB
+ *---------------------------------------------------*/
+float ofxStrokeUtil::getAspectRatio(ofPath p){
+    //DEBUG :: adjust accordingly if getBoundingBox is moved into ofPath
+    ofRectangle bounds = getBoundingBox(p);
+    return (bounds.width)/(bounds.height);
+}
+
+float ofxStrokeUtil::getAspectRatio(ofPolyline p){
+    ofRectangle bounds = p.getBoundingBox();
+    return (bounds.width)/(bounds.height);
+}
+
+/*---------------------------------------------------*
+ ARC LENGTH
+ returns: total length of the shape
+ *---------------------------------------------------*/
+float ofxStrokeUtil::getArcLength(ofPath p){
+    
+    float arcLength;
+    if(p.getOutline().size() > 0){
+        for(ofPolyline polyline : p.getOutline()){
+            arcLength += getArcLength(polyline);
+        }  
+    }
+    return arcLength;
+}
+float ofxStrokeUtil::getArcLength(ofPolyline p){
+    
+    float arcLength;
+    if(p.getVertices().size()>1){
+        for(int i=1; i<p.getVertices().size(); i++){
+            ofPoint a = p.getVertices()[i-1];
+            ofPoint b = p.getVertices()[i];
+            ofPoint d = b-a;
+            arcLength += d.length();
+        }
+    }
+    return arcLength;
+}
+
+/*---------------------------------------------------*
+ ANGLE FUNCTIONS
+ returns: the cumulative angle through which the mark moves
+ *---------------------------------------------------*/
+float ofxStrokeUtil::getTotalAngle(ofPath p){
+    
+    float totalAngle = 0;
+    if(p.getOutline().size() > 0){
+        float meanAbsAngle = 0;
+        for(ofPolyline polyLine: p.getOutline()){
+            if(polyLine.getVertices().size() > 2){
+                for(int i=0; i<polyLine.getVertices().size(); i++){
+                    ofPoint a, b, c;
+                    if(i == 0){
+                        a = ofVec2f(0,0);
+                        b = ofVec2f(0,0);
+                    }
+                    else if(i == 1){
+                        a = ofVec2f(0,0);
+                        b = polyLine.getVertices()[i-1];
+                    }
+                    else{
+                        a = polyLine.getVertices()[i-2];
+                        b = polyLine.getVertices()[i-1];
+                    }
+                    c = polyLine.getVertices()[i];
+                    
+                    float theta = getJointAngle(a,b,c);
+                    totalAngle += theta;
+                }
+            }
+        }
+    }
+    return totalAngle;
+}
+
+float ofxStrokeUtil::getTotalAbsoluteAngle(ofPath p){
+    float totalAngle = 0;
+    float nCorners = 0;
+    float cornerThreshold = (30*PI)/180;
+    
+    if(p.getOutline().size() > 0){
+        float meanAbsAngle = 0;
+        for(ofPolyline polyLine: p.getOutline()){
+            if(polyLine.getVertices().size() > 2){
+                for(int i=0; i<polyLine.getVertices().size(); i++){
+                    ofPoint a, b, c;
+                    if(i == 0){
+                        a = ofVec2f(0,0);
+                        b = ofVec2f(0,0);
+                    }
+                    else if(i == 1){
+                        a = ofVec2f(0,0);
+                        b = polyLine.getVertices()[i-1];
+                    }
+                    else{
+                        a = polyLine.getVertices()[i-2];
+                        b = polyLine.getVertices()[i-1];
+                    }
+                    c = polyLine.getVertices()[i];
+                    
+                    float theta = abs(getJointAngle(a,b,c));
+                    
+                    totalAngle += theta;
+                    
+                    if((theta > cornerThreshold) && (i>1) && (i<(polyLine.getVertices().size()-1)))
+                        nCorners++; //DEBUG:: greater than the corner thresh??
+                }
+            }
+        }
+    }
+    corners = nCorners;
+    return totalAngle;
+}
+float ofxStrokeUtil::getMeanAngle(ofPath p){
+    float angle = getTotalAngle(p);
+    float count = 0;
+    if(p.getOutline().size() > 0){
+        for(ofPolyline polyline: p.getOutline()){
+            count += polyline.getVertices().size();
+        }
+    }
+    if(count > 2)
+        return (angle/count)*100; //DEBUG :: ask golan for logic of /100
+    else
+        return 0;
+}
+float ofxStrokeUtil::getMeanAbsoluteAngle(ofPath p){
+    float angle = getTotalAbsoluteAngle(p);
+    float count = 0;
+    if(p.getOutline().size() > 0){
+        for(ofPolyline polyline: p.getOutline()){
+            count += polyline.getVertices().size();
+        }
+    }
+    if(count > 2)
+        return (angle/count)*10; //DEBUG :: ask golan for logic of /10
+    else
+        return 0;
+    
+}
+float ofxStrokeUtil::getStdDevAbsoluteAngle(ofPath p){
+    float stdDevAngle = 0;
+    float count = 0;
+    float meanAbsAngle = getMeanAbsoluteAngle(p);
+    
+    if(p.getOutline().size() > 0){
+        float meanAbsAngle = 0;
+        for(ofPolyline polyLine: p.getOutline()){
+            if(polyLine.getVertices().size() > 2){
+                for(int i=0; i<polyLine.getVertices().size(); i++){
+                    ofPoint a, b, c;
+                    if(i == 0){
+                        a = ofVec2f(0,0);
+                        b = ofVec2f(0,0);
+                    }
+                    else if(i == 1){
+                        a = ofVec2f(0,0);
+                        b = polyLine.getVertices()[i-1];
+                    }
+                    else{
+                        a = polyLine.getVertices()[i-2];
+                        b = polyLine.getVertices()[i-1];
+                    }
+                    c = polyLine.getVertices()[i];
+                    
+                    float theta = abs(getJointAngle(a,b,c));
+                    float difFromMean = theta - meanAbsAngle;
+                    stdDevAngle += (difFromMean*difFromMean);
+                    count ++;
+                }
+            }
+        }
+        if(count > 2)
+            return (sqrt(stdDevAngle/count));
+        else
+            return 0;
+    }
+    return stdDevAngle;
+    
+}
+/*---------------------------------------------------*
+ CORNERS
+ returns: # of "corners" present in the shape
+ 
+ corners are found as a byproduct of computing the
+ absolute angle. If we find a angle greater(?) than
+ 30 degrees, we mark it as a corner.
+ DEBUG:: double check this with golan 
+ *---------------------------------------------------*/
+float ofxStrokeUtil::getNumberofCorners(ofPath p){
+    getTotalAbsoluteAngle(p);
+    return corners;
+}
+
+/*---------------------------------------------------
+ CENTROID DISTANCE
+ returns: various calculations of the overall distance
+ from the centroid
+ *---------------------------------------------------*/
 float ofxStrokeUtil::getStdDevDistanceFromCentroid(ofPath p){
     float stdDevDistance = 0;
     float meanDistance = getMeanDistanceFromCentroid(p);
@@ -46,8 +340,6 @@ float ofxStrokeUtil::getStdDevDistanceFromPoint(ofPolyline p, ofPoint point, flo
     return stdDevDistance;
 
 }
-/*---------------------------------------------------
- *---------------------------------------------------*/
 float ofxStrokeUtil::getMeanDistanceFromCentroid(ofPath p){
     ofPoint centroid = getCentroid(p);
     float meanDist = 0;
@@ -83,6 +375,8 @@ float ofxStrokeUtil::getMeanDistanceFromPoint(ofPolyline p, ofPoint point){
 }
 
 /*---------------------------------------------------*
+ SPEED + VELOCITY
+ returns: various ways to compare the speed of the gesture
  *---------------------------------------------------*/
 float ofxStrokeUtil::getStdDevSpeed(ofPath p){
     float speed = 0;
@@ -118,8 +412,6 @@ float ofxStrokeUtil::getStdDevSpeed(ofPolyline p, float meanSpeed){
     return speed;
 }
 
-/*---------------------------------------------------
- *---------------------------------------------------*/
 float ofxStrokeUtil::getMeanSpeed(ofPath p){
     float meanSpeed = 0;
     if(p.getOutline().size() > 0){
@@ -149,8 +441,6 @@ float ofxStrokeUtil::getMeanSpeed(ofPolyline p){ //DEBUG :: get rid of count var
     return meanSpeed;
 }
 
-/*---------------------------------------------------
- *---------------------------------------------------*/
 ofPoint ofxStrokeUtil::getMeanVelocity(ofPath p){
     ofPoint meanVel;
     if(p.getOutline().size() > 0){
@@ -178,11 +468,10 @@ ofPoint ofxStrokeUtil::getMeanVelocity(ofPolyline p){
 }
 
 /*---------------------------------------------------
- Returns the orientation of the shape, as an angle from
+ ORIENTATION
+ returns: the orientation of the shape, as an angle from
  the horizontal axis, and the "orientedness", how strongly
  the shape follows that axis, as a float. 
- 
- **FLAG || return as struct
  *---------------------------------------------------*/
 ofVec2f ofxStrokeUtil::getOrientation(ofPath p){
     ofVec2f eigenvector;
@@ -279,256 +568,6 @@ ofVec2f ofxStrokeUtil::calculateMajorAxis(float A, float B, float C, float D){
     }
 }
 
-/*---------------------------------------------------*
- *---------------------------------------------------*/
-float ofxStrokeUtil::getArcLength(ofPath p){
-    
-    float arcLength;
-    if(p.getOutline().size() > 0){
-        for(ofPolyline polyline : p.getOutline()){
-            arcLength += getArcLength(polyline);
-        }  
-    }
-    return arcLength;
-}
-float ofxStrokeUtil::getArcLength(ofPolyline p){
-    
-    float arcLength;
-    if(p.getVertices().size()>1){
-        for(int i=1; i<p.getVertices().size(); i++){
-            ofPoint a = p.getVertices()[i-1];
-            ofPoint b = p.getVertices()[i];
-            ofPoint d = b-a;
-            arcLength += d.length();
-        }
-    }
-    return arcLength;
-}
-
-/*---------------------------------------------------*
- *---------------------------------------------------*/
-float ofxStrokeUtil::getArea(ofPath p){
-    
-    float area = 0;
-    if(p.getOutline().size() > 0){
-        for(ofPolyline polyline: p.getOutline()){
-            area += polyline.getArea();
-        }
-    }
-    return area;
-}
-
-/*---------------------------------------------------*
- returns the true "average" center point of the given path
- *---------------------------------------------------*/
-ofPoint ofxStrokeUtil::getCentroid(ofPath p){
-    ofPoint centroid;
-    float numPts = 0;
-    if(p.getOutline().size() > 0){
-        for(ofPolyline polyline: p.getOutline()){
-            for(ofPoint vertex: polyline.getVertices()){
-                centroid += vertex;
-                numPts++;
-            }
-        }
-        if(numPts > 0)
-            centroid/=numPts;
-    }
-    return centroid;
-}
-
-/*---------------------------------------------------*
- *---------------------------------------------------*/
-ofPoint ofxStrokeUtil::getCenterOfMass(ofPath p){
-    
-}
-    
-//this might make more sense to put in ofPath
-ofRectangle ofxStrokeUtil::getBoundingBox(ofPath p){
-    //based off of the corresponding ofPolyline function
-    ofRectangle box;
-    if(p.getOutline().size() > 0){
-        box.set(MAXFLOAT,MAXFLOAT,0,0);
-        for(ofPolyline polyline: p.getOutline()){
-            for(ofPoint vertex: polyline.getVertices()){
-                if(vertex.x < box.x){
-                    box.x = vertex.x;
-                }
-                if(vertex.x > box.width){
-                    box.width = vertex.x;
-                }
-                if(vertex.y < box.y){
-                    box.y = vertex.y;
-                }
-                if(vertex.y > box.height){
-                    box.height = vertex.y;
-                }
-            }
-        }
-        box.width -= box.x;
-        box.height -= box.y;
-    }
-    return box;
-}
-
-/*---------------------------------------------------*
- *---------------------------------------------------*/
-float ofxStrokeUtil::getAspectRatio(ofPath p){
-    //DEBUG :: adjust accordingly if getBoundingBox is moved into ofPath
-    ofRectangle bounds = getBoundingBox(p);
-    return (bounds.width)/(bounds.height);
-}
-
-float ofxStrokeUtil::getAspectRatio(ofPolyline p){
-    ofRectangle bounds = p.getBoundingBox();
-    return (bounds.width)/(bounds.height);
-}
-
-
-/*---------------------------------------------------*
- Returns the cumulative angle through which the mark moves
- *---------------------------------------------------*/
-float ofxStrokeUtil::getTotalAngle(ofPath p){
-    
-    float totalAngle = 0;
-    if(p.getOutline().size() > 0){
-        float meanAbsAngle = 0;
-        for(ofPolyline polyLine: p.getOutline()){
-            if(polyLine.getVertices().size() > 2){
-                for(int i=0; i<polyLine.getVertices().size(); i++){
-                    ofPoint a, b, c;
-                    if(i == 0){
-                        a = ofVec2f(0,0);
-                        b = ofVec2f(0,0);
-                    }
-                    else if(i == 1){
-                        a = ofVec2f(0,0);
-                        b = polyLine.getVertices()[i-1];
-                    }
-                    else{
-                        a = polyLine.getVertices()[i-2];
-                        b = polyLine.getVertices()[i-1];
-                    }
-                    c = polyLine.getVertices()[i];
-                    
-                    float theta = getJointAngle(a,b,c);
-                    totalAngle += theta;
-                }
-            }
-        }
-    }
-    return totalAngle;
-}
-
-float ofxStrokeUtil::getTotalAbsoluteAngle(ofPath p){
-    float totalAngle = 0;
-    float nCorners = 0;
-    float cornerThreshold = (30*PI)/180;
-    
-    if(p.getOutline().size() > 0){
-        float meanAbsAngle = 0;
-        for(ofPolyline polyLine: p.getOutline()){
-            if(polyLine.getVertices().size() > 2){
-                for(int i=0; i<polyLine.getVertices().size(); i++){
-                    ofPoint a, b, c;
-                    if(i == 0){
-                        a = ofVec2f(0,0);
-                        b = ofVec2f(0,0);
-                    }
-                    else if(i == 1){
-                        a = ofVec2f(0,0);
-                        b = polyLine.getVertices()[i-1];
-                    }
-                    else{
-                        a = polyLine.getVertices()[i-2];
-                        b = polyLine.getVertices()[i-1];
-                    }
-                    c = polyLine.getVertices()[i];
-                    
-                    float theta = abs(getJointAngle(a,b,c));
-                    
-                    totalAngle += theta;
-                    
-                    if((theta > cornerThreshold) && (i>1) && (i<(polyLine.getVertices().size()-1)))
-                        nCorners++;
-                }
-            }
-        }
-    }
-    corners = nCorners;
-    return totalAngle;
-}
-float ofxStrokeUtil::getMeanAngle(ofPath p){
-    float angle = getTotalAngle(p);
-    float count = 0;
-    if(p.getOutline().size() > 0){
-        for(ofPolyline polyline: p.getOutline()){
-            count += polyline.getVertices().size();
-        }
-    }
-    if(count > 2)
-        return (angle/count)*100; //DEBUG :: ask golan for logic of /100
-    else
-        return 0;
-}
-float ofxStrokeUtil::getMeanAbsoluteAngle(ofPath p){
-    float angle = getTotalAbsoluteAngle(p);
-    float count = 0;
-    if(p.getOutline().size() > 0){
-        for(ofPolyline polyline: p.getOutline()){
-            count += polyline.getVertices().size();
-        }
-    }
-    if(count > 2)
-        return (angle/count)*10; //DEBUG :: ask golan for logic of /10
-    else
-        return 0;
-
-}
-float ofxStrokeUtil::getStdDevAbsoluteAngle(ofPath p){
-    float stdDevAngle = 0;
-    float count = 0;
-    float meanAbsAngle = getMeanAbsoluteAngle(p);
-    
-    if(p.getOutline().size() > 0){
-        float meanAbsAngle = 0;
-        for(ofPolyline polyLine: p.getOutline()){
-            if(polyLine.getVertices().size() > 2){
-                for(int i=0; i<polyLine.getVertices().size(); i++){
-                    ofPoint a, b, c;
-                    if(i == 0){
-                        a = ofVec2f(0,0);
-                        b = ofVec2f(0,0);
-                    }
-                    else if(i == 1){
-                        a = ofVec2f(0,0);
-                        b = polyLine.getVertices()[i-1];
-                    }
-                    else{
-                        a = polyLine.getVertices()[i-2];
-                        b = polyLine.getVertices()[i-1];
-                    }
-                    c = polyLine.getVertices()[i];
-                    
-                    float theta = abs(getJointAngle(a,b,c));
-                    float difFromMean = theta - meanAbsAngle;
-                    stdDevAngle += (difFromMean*difFromMean);
-                    count ++;
-                }
-            }
-        }
-        if(count > 2)
-            return (sqrt(stdDevAngle/count));
-        else
-            return 0;
-    }
-    return stdDevAngle;
-    
-}
-float ofxStrokeUtil::getNumberofCorners(ofPath p){
-    getTotalAbsoluteAngle(p);
-    return corners;
-}
        
 //Return angle between two segments
 float ofxStrokeUtil::getJointAngle(ofVec2f a, ofVec2f b, ofVec2f c){
@@ -632,7 +671,8 @@ float ofxStrokeUtil::getJointAngle(ofVec2f a, ofVec2f b, ofVec2f c){
 
 
 /*---------------------------------------------------*
- Returns the number of times an ofPath intersects with itself
+ INTERSECTIONS
+ returns: # of times an ofPath intersects with itself
  *---------------------------------------------------*/
 vector<ofPoint> ofxStrokeUtil::getSelfIntersections(ofPath tag){
     
@@ -657,10 +697,7 @@ bool ofxStrokeUtil::contains(ofPoint a, vector<ofPoint> points){
     return false;
 }
 
-/*---------------------------------------------------*
- Returns the number of times a single Polyline intersects
- with itself.
- *---------------------------------------------------*/
+
 vector<ofPoint> ofxStrokeUtil::getSelfIntersections(ofPolyline tag){
     vector<ofPoint> intersections;
     vector<ofPoint> aPoints = tag.getVertices();
@@ -894,6 +931,12 @@ vector<float> ofxStrokeUtil::getMoments(ofPath p){
     
 }
 
+/*---------------------------------------------------*
+ HULL POINT PERCENTAGE
+ returns: percentage of verticies in the path that
+ actually fall on the Convex Hull of the gesture.
+ *---------------------------------------------------*/
+
 float ofxStrokeUtil::getHullPointPercentage(ofPath p){
     if(p.getOutline().size() > 0){
         float numPts = 0;
@@ -945,7 +988,16 @@ float ofxStrokeUtil::getPointDensity(ofPath p){
     return 0;
 }
 
-/*-----------------------------------------------*/
+/*-----------------------------------------------*
+ ofHULL
+ 
+ subclass for computing the convex hull of the
+ shape/gesture represented by an ofPath.
+ 
+ There's a couple different implementations of how
+ to do each part of the computation here, golan's
+ original algorithm, and then some optomized ones
+ *-----------------------------------------------*/
 ofHull::ofHull(ofPath p){
     
     depth = 0;
@@ -1033,19 +1085,22 @@ float ofHull::getArea(){
     return area;
 }
 
-//Alex's slightly cleaner implementation of the onLeft implementation
-//DEBUG:: needs testing
+/*-----------------------------------------------*
+ Alex's slightly cleaner implementation of onLEFT
 
-//translate the rightmost point to the origin, and then take the cross
-//product of left and p. The function will return positive if p is
-//on the right, negative if its on the left, or 0 if it is on the line
+ translate the rightmost point to the origin, and then take the cross
+ product of left and p. The function will return positive if p is
+ on the right, negative if its on the left, or 0 if it is on the line
+ *-----------------------------------------------*/
 
 int ofHull::direction(ofPoint left, ofPoint right, ofPoint p){
     return((left.x-right.x)*(p.y-right.y)) - ((p.x-right.x)*(left.y-right.y));
 }
 
-//determine if p is lying on the left or right side of the
-//first point lying on the line formed by a and b
+/*-----------------------------------------------*
+ determine if p is lying on the left or right side
+ line formed by a and b
+ *-----------------------------------------------*/
 bool ofHull::onLeft(ofPoint a, ofPoint b, ofPoint p){
     if(a.x == b.x){
         if(p.x < a.x)
@@ -1063,7 +1118,7 @@ bool ofHull::onLeft(ofPoint a, ofPoint b, ofPoint p){
         }
     }
     else{
-        //DEBUG :: super sketch
+        //DEBUG :: super sketch. not sure what error the 10000 are solving
         float slope = (b.y - a.y) / (b.x - a.x);
         float x3    = (((p.x + slope * (slope * a.x - a.y + p.y)) /  (1.0 + slope * slope)) * 10000.0 );
         float y3    = ((slope * (x3 / 10000 - a.x) + a.y) * 10000.0 );
@@ -1093,13 +1148,17 @@ bool ofHull::onLeft(ofPoint a, ofPoint b, ofPoint p){
     }
 }
 
-//recursive hull finding method
-//let's call the line segment formed by left and right, line LR.
-//from a given set of points, all on the same side of LR, find
-//the farthest, F. Partition the remaining points into 3 subsets
-//depending on whether they are inside the triangle formed by
-//LRF, on the right side of the line formed by L and F, or on
-//on the right of F to R
+/*-----------------------------------------------*
+ QUICK HULL
+ recursive hull finding method
+ 
+ Let's call the line segment formed by left and right, line LR.
+ From a given set of points, all on the same side of LR, find
+ the farthest, F. Partition the remaining points into 3 subsets
+ depending on whether they are inside the triangle formed by
+ LRF, on the right side of the line formed by L and F, or on
+ on the right of F to R
+ *-----------------------------------------------*/
 
 void ofHull::golanQuickHull(vector<ofPoint> p, vector<ofPoint> &output, ofPoint left, ofPoint right, int dir, int depth){
     int MAX_RECURSION_DEPTH = 1000; //meh
@@ -1141,9 +1200,9 @@ void ofHull::golanQuickHull(vector<ofPoint> p, vector<ofPoint> &output, ofPoint 
         }
         
         p1.push_back(left);
-        p1.push_back(farthest); //DEBUG:: looks like to me, P1 will only
-        p2.push_back(farthest); //ever add left to the output array, and
-        p2.push_back(right); //not the farthest it finds
+        p1.push_back(farthest); 
+        p2.push_back(farthest); 
+        p2.push_back(right); 
         
         if(dir == 0){
             golanQuickHull(p1, output, left, farthest, 0, depth);
@@ -1203,11 +1262,16 @@ void ofHull::quickHull(vector<ofPoint> p, vector<ofPoint> &output, ofPoint left,
     }
 }
 
-
-//Find  a point which is certain to be in the Hull, from among a group of points
-//All the given points are on the same side of the line formed by l and r,
-//so the point with the longest distance perpendicular to this line is 
-//the point we are looking for.  Return the index of this point in the Vector.
+/*------------------------------------------------------*
+ SPLIT AT
+ returns: index of the farthest point from line LR
+ 
+ Find  a point which is certain to be in the Hull, from 
+ among a group of points. All the given points are on the
+ same side of the line formed by l and r, so the point with 
+ the longest distance perpendicular to this line is the point
+ we are looking for.  Return the index of this point in the Vector.
+ *------------------------------------------------------*/
 int ofHull::splitAt(vector<ofPoint> p, ofPoint l, ofPoint r){
     float denom = r.x-l.x;
     if (r.x == l.x) { 

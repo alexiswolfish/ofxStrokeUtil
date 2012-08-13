@@ -22,6 +22,18 @@ class ofxStrokeUtil{
         ofPoint getCentroid(ofPath p);
         ofPoint getCenterOfMass(ofPath p);
     
+        float getAspectRatio(ofPath p);
+        float getAspectRatio(ofPolyline p);
+        float getArcLength(ofPath p);
+        float getArcLength(ofPolyline p);
+    
+        float getTotalAngle(ofPath p); 
+        float getTotalAbsoluteAngle(ofPath p);
+        float getMeanAngle(ofPath p);
+        float getMeanAbsoluteAngle(ofPath p);
+        float getStdDevAbsoluteAngle(ofPath p);
+        float getNumberofCorners(ofPath p);
+    
         float getMeanDistanceFromCentroid(ofPath p);
         float getMeanDistanceFromCentroid(ofPolyline p);
         float getMeanDistanceFromPoint(ofPolyline p, ofPoint centroid);
@@ -38,23 +50,11 @@ class ofxStrokeUtil{
         ofPoint getMeanVelocity(ofPath p);
         ofPoint getMeanVelocity(ofPolyline p);
     
-        float getAspectRatio(ofPath p);
-        float getAspectRatio(ofPolyline p);
-        float getArcLength(ofPath p);
-        float getArcLength(ofPolyline p);
-        vector<ofPoint> getSelfIntersections(ofPolyline tag);
-        vector<ofPoint> getSelfIntersections(ofPath tag);
-    
         ofVec2f getOrientation(ofPath p);
         ofVec2f getVelocityOrientation(ofPath p);
     
-        float getTotalAngle(ofPath p); 
-        float getTotalAbsoluteAngle(ofPath p);
-        float getMeanAngle(ofPath p);
-        float getMeanAbsoluteAngle(ofPath p);
-        float getStdDevAbsoluteAngle(ofPath p);
-        float getNumberofCorners(ofPath p);
-    
+        vector<ofPoint> getSelfIntersections(ofPolyline tag);
+        vector<ofPoint> getSelfIntersections(ofPath tag);
         vector<float> getMoments(ofPath p);
     
         //hull functions
