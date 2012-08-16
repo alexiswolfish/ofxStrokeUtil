@@ -59,8 +59,43 @@ ofPoint ofxStrokeUtil::getCenterOfMass(ofPath p){
  OBB
  returns: bounding box oriented along the orientation axis.
  *---------------------------------------------------*/
-vector<ofPoint> getOrientedBoundingBox(ofPath p){
+vector<ofVec2f> ofxStrokeUtil::getOrientedBoundingBox(ofPath p){
+    vector<ofVec2f> oBBCorners;
+    ofPath rotatedPath;
+    ofVec2f orientation = getOrientation(p);
+    ofPoint center = getCentroid(p);
     
+    rotatedPath = p;
+    rotatedPath.setMode(ofPath::POLYLINES);
+    rotatedPath.rotate(orientation.x*(180/PI), center, ofVec3f(0,0,1));
+
+    oBBCorners.push_back(ofVec2f(MAXFLOAT,MAXFLOAT));
+    float width = 0;
+    float height = 0;
+    
+    for(ofPolyline polyline: rotatedPath.getOutline()){
+        for(ofPoint vertex: polyline.getVertices()){
+            if(vertex.x < oBBCorners[0].x)
+                oBBCorners[0].x = vertex.x;
+            if(vertex.x > width)
+                width = vertex.x;
+            if(vertex.y < oBBCorners[0].y)
+                oBBCorners[0].y = vertex.y;
+            if(vertex.y > height)
+                height = vertex.y;
+        }
+    }
+    width -= oBBCorners[0].x;
+    height -= oBBCorners[0].y;
+    
+    oBBCorners.push_back(ofVec2f(oBBCorners[0].x+width, oBBCorners[0].y));
+    oBBCorners.push_back(ofVec2f(oBBCorners[0].x+width, oBBCorners[0].y+height));
+    oBBCorners.push_back(ofVec2f(oBBCorners[0].x, oBBCorners[0].y+height));
+    
+    for(int i=0; i< oBBCorners.size(); i++)
+        oBBCorners[i].rotate(-orientation.x*(180/PI), center);
+    
+    return oBBCorners;
 }
 
 /*---------------------------------------------------*

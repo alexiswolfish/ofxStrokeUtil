@@ -1,77 +1,248 @@
 #include "testApp.h"
 
-
 //--------------------------------------------------------------
 void testApp::setup(){
-	ofBackground(127);
-
-    useofPath = true;
-    newPath = false;
-    drawOutline = false;
-    testHull = false;
     
     guiWidth = 200;
-    strokeWidth = 2;
+    guiSpace = 8;
     
-    samplerImg.loadImage("landscape.jpg");
-    float resize = guiWidth/samplerImg.width;
-    samplerImg.resize(guiWidth, samplerImg.height*resize);
+    //OF colorTheme
+    main.set(185,187,189);
+    comp1.set(58,56,57);
+    comp2.set(238,57,135);
+    comp3.set(253,164,5);
+    comp4.set(208,83,153);
+    comp5.set(253,187,28);
+    comp6.set(123,223,232);
+    curColor.set(comp4);
     
-    guiSetup();
+    //GUI setup
+    panelMain.setup("", "main.xml", guiSpace, guiSpace*4);
+    panelMain.add(analyzeToggle.setup("<---ANALYZE", false, guiWidth));
+    panelMain.add(newButton.setup("NEW",guiWidth));
+    panelMain.add(fillToggle.setup("FILL", false, guiWidth));
+    panelMain.add(pathToggle.setup("CLOSE PATHS", false, guiWidth));
+    panelMain.add(internalToggle.setup("SWTICH ofPATH MODE",false, guiWidth));
+    panelMain.add(strokeWidthSlider.setup("STROKE WIDTH", 2, 0.001, 5));
     
-    canvas = *new ofRectangle(guiWidth+24, 8, ofGetWindowWidth() - guiWidth-32, ofGetWindowHeight()-16);
+    newButton.addListener(this,&testApp::clearDisplay);
+    internalToggle.addListener(this, &testApp::switchMode);
+    
+    panelDisplay.setup("display options", "display.xml", guiSpace, panelMain.getHeight()+guiSpace*5);
+    panelDisplay.add(hullToggle.setup("CONVEX HULL", false, guiWidth));
+    panelDisplay.add(intersectToggle.setup("INTERSECTIONS", false, guiWidth));
+    panelDisplay.add(orientToggle.setup("ORIENTATION", false, guiWidth));
+    panelDisplay.add(bBoxToggle.setup("BOUNDING BOX", false, guiWidth));
+    panelDisplay.add(obBoxToggle.setup("ORIENTED BOUNDING BOX", false, guiWidth));
+    panelDisplay.add(centroidToggle.setup("CENTROID", false, guiWidth));
+    
+    panelColor.setup("","color.xml", guiSpace, panelMain.getHeight()+panelDisplay.getHeight()+guiSpace*6);
+    panelColor.add(rSlider.setup("R",curColor.r,0,255));
+    panelColor.add(gSlider.setup("G",curColor.g,0,255));
+    panelColor.add(bSlider.setup("B",curColor.b,0,255));
+    
+    canvas = *new ofRectangle(guiWidth+guiSpace*3, guiSpace*4, ofGetWindowWidth() - guiWidth-32, ofGetWindowHeight()-16-guiSpace*3);
+    swatch = *new ofRectangle(guiSpace, panelColor.getPosition().y + panelColor.getHeight() + guiSpace, guiWidth,guiWidth/2);
+    float displayHeight = swatch.y + swatch.height + guiSpace;
+    resultsRec = *new ofRectangle(guiSpace, displayHeight, guiWidth, guiSpace*2); 
     
     curPath.setFilled(false);
-    curColor.set(0,0,0);
+    cleared = false;
     
-	}
+    ofEnableSmoothing();
+
+
+}
 
 //--------------------------------------------------------------
 void testApp::update(){
     
-  //  curPath.getSubPaths()[0];
-    curPath.setStrokeWidth(strokeWidth);
+    curColor.set(rSlider.value, gSlider.value, bSlider.value);
+    curPath.setStrokeWidth(strokeWidthSlider.value);
     curPath.setStrokeColor(curColor);
     curPath.setFillColor(curColor);
+    
+    curPath.setFilled(fillToggle.value);
+    
 
 }
 
 //--------------------------------------------------------------
 void testApp::draw(){
-    ofBackground(201,255,255);
+    
+    ofBackground(main);
+    ofSetColor(comp1);
+    ofRect(0, 0, ofGetWindowWidth(), guiSpace*3);
+    ofSetColor(comp2);
+    ofDrawBitmapString("ofxStrokeUtil GRAFFITI ANALYZER EXAMPLE", guiSpace, guiSpace*2);
     ofSetColor(255, 255, 255);
     ofRect(canvas);
+    ofSetColor(curColor);
+    ofRect(swatch);
     
-    if(!drawOutline){
-        curPath.draw();
-    }
-    else{
-        if(curPath.hasOutline()){
-            ofSetLineWidth( strokeWidth );
-            ofSetColor(curColor);
-			for(ofPolyline p: curPath.getOutline()){
-                p.draw();
-            }
-            cout << "end" << endl;
-        }
-    }
-    if(testHull){
+    panelMain.draw();
+    panelDisplay.draw();
+    panelColor.draw();
+    
+    curPath.draw();
+    
+    if(hullToggle.value){
         ofPushStyle();
         ofFill();
-        ofSetColor(255, 255, 0, 150);
+        ofSetColor(comp5, 180);
         ofHull *h = new ofHull(curPath);
         h->renderHull();
         ofSetColor(0,255,255);
         h->renderHullPoints();
         ofPopStyle();
     }
+    if(bBoxToggle.value){
+        ofPushStyle();
+        ofNoFill();
+        ofSetColor(comp6);
+        ofSetLineWidth(2);
+        ofRect(strokeUtil.getBoundingBox(curPath));
+        ofPopStyle();
+    }
+    if(obBoxToggle.value){
+        ofPushStyle();
+        ofNoFill();
+        ofSetColor(35,0,97);
+        ofSetLineWidth(2);
+        vector<ofVec2f> corners = strokeUtil.getOrientedBoundingBox(curPath);
+        ofLine(corners[0], corners[1]);
+        ofLine(corners[1], corners[2]);
+        ofLine(corners[2], corners[3]);
+        ofLine(corners[3], corners[0]);
+        ofPopStyle();
+    }
+    if(analyzeToggle.value){
+        ofPushStyle();
+        ofSetColor(comp1);
+        ofRect(resultsRec);
+        ofSetColor(comp2);
+        ofDrawBitmapString("ANALYSIS", resultsRec.x, resultsRec.y+12);
+        ofVec2f pos = *new ofVec2f(resultsRec.x, resultsRec.y + resultsRec.height + guiSpace*2);
+        for(int i=0; i<results.size(); i++){
+            ofDrawBitmapString(results[i], pos.x, pos.y + i*12);
+        }
+        ofPopStyle();
+    }
+    if(centroidToggle.value){
+        ofPushStyle();
+        ofSetColor(242,31,13);
+        ofFill();
+        ofPoint centroid = strokeUtil.getCentroid(curPath);
+        ofCircle(centroid.x, centroid.y, 10);
+        
+        ofSetColor(comp6);
+        for(ofPolyline p : curPath.getOutline()){
+            //ofPolyline's normal centroid function fails on self intersecting
+            //non closed shapes (even though they force a "close" by connecting
+            //the beginning and the end
+            ofPoint c = p.getCentroid2D();
+            ofCircle(c.x, c.y, 5);
+        }
+        ofPopStyle();
+    }
+    if(intersectToggle.value){
+        ofPushStyle();
+        ofSetColor(35,0,97);
+        ofFill();
+        vector<ofPoint> intersections = strokeUtil.getSelfIntersections((curPath));
+        for(ofPoint p : intersections){
+            ofCircle(p.x,p.y,3);
+        }
+        ofPopStyle();
+    }
+    if(orientToggle.value){
+        ofVec2f orientation = strokeUtil.getOrientation(curPath);
+        ofPoint center = strokeUtil.getCentroid(curPath);
+        ofPushStyle();
+        ofNoFill();
+        ofSetColor(comp6);
+        ofSetLineWidth(2);
+        float lr = 10*orientation.y;
+        float lx = center.x + lr* sin((orientation.x));
+        float ly = center.y + lr* cos((orientation.x));
+        ofLine(center.x, center.y, lx, ly);
+        ofPopStyle();
+    }
+
+    if(cleared)
+        clear();
 
 }
 
+void testApp::switchMode(bool &p){
+    if(!internalToggle.value){
+        curPath.setMode(ofPath::POLYLINES);
+        cout << "Mode set to Polylines"<<endl;
+    }
+    else{
+        curPath.setMode(ofPath::PATHS);
+        cout << "Mode set to SubPaths" << endl;
+    }
+}
+
+void testApp::clearDisplay(bool &pressed){
+    cleared = true;
+}
+void testApp::clear(){
+    ofPushStyle();
+    ofSetColor(255, 255, 255);
+    ofFill();
+    ofRect(canvas);
+    curPath.clear();
+    ofPopStyle();
+}
+
+void testApp::analyze(){
+    
+    ofPoint meanVel = strokeUtil.getMeanVelocity(curPath);
+    ofVec2f orientation = strokeUtil.getOrientation(curPath);
+    results.push_back("area: " + ofToString(strokeUtil.getArea(curPath)));
+    results.push_back("corners: " + ofToString(strokeUtil.getNumberofCorners(curPath),2));
+    results.push_back("intersections: " + ofToString(strokeUtil.getSelfIntersections(curPath).size()));
+    results.push_back("aspectRatio: " + ofToString(strokeUtil.getAspectRatio(curPath),2));
+    results.push_back("arcLength: " + ofToString(strokeUtil.getArcLength(curPath),2));
+    results.push_back("meanVelocity: (" + ofToString(meanVel.x,2) + ", " + ofToString(meanVel.y,2)+")");
+    results.push_back("meanSpeed: " + ofToString(strokeUtil.getMeanSpeed(curPath),2));
+    results.push_back("stdDevSpeed: " + ofToString(strokeUtil.getStdDevSpeed(curPath),2));
+    results.push_back("totalAngle: " + ofToString(strokeUtil.getTotalAngle(curPath),2));
+    results.push_back("totalAbsAngle: " + ofToString(strokeUtil.getTotalAbsoluteAngle(curPath),2));
+    results.push_back("meanAngle: " + ofToString(strokeUtil.getMeanAngle(curPath),2));
+    results.push_back("meanAbsAngle: " + ofToString(strokeUtil.getMeanAbsoluteAngle(curPath),2));
+    results.push_back("stdDevAbsAngle: " + ofToString(strokeUtil.getStdDevAbsoluteAngle(curPath),2));
+    results.push_back("meanDistFromCenter: " + ofToString(strokeUtil.getMeanDistanceFromCentroid(curPath),2));
+    results.push_back("stdDevDistFromCenter: " + ofToString(strokeUtil.getStdDevDistanceFromCentroid(curPath)));
+    results.push_back("pointDensity: " + ofToString(strokeUtil.getPointDensity(curPath)));
+    results.push_back("compactness: " + ofToString(strokeUtil.getCompactness(curPath),2));
+    results.push_back("hullPointPercentage: " + ofToString(strokeUtil.getHullPointPercentage(curPath),2));
+    results.push_back("orientation: " + ofToString(orientation.x*(180/PI),2));
+    results.push_back("anisitrophy: " + ofToString(orientation.y,2));
+    
+}
+//--------------------------------------------------------------
+void testApp::keyPressed(int key){
+    if(key == ' ')
+        cleared = true;
+    else{
+        ofVec2f orientation = strokeUtil.getOrientation(curPath);
+        ofPoint center = strokeUtil.getCentroid(curPath);
+        curPath.rotate(orientation.x*(180/PI), center, ofVec3f(0,0,1));
+        cout << "rotated "<< orientation.x*(180/PI) << " degrees" << endl;
+    }
+}
+
+//--------------------------------------------------------------
+void testApp::keyReleased(int key){
+
+}
 
 //--------------------------------------------------------------
 void testApp::mouseMoved(int x, int y ){
-    
+
 }
 
 //--------------------------------------------------------------
@@ -83,106 +254,21 @@ void testApp::mouseDragged(int x, int y, int button){
 //--------------------------------------------------------------
 void testApp::mousePressed(int x, int y, int button){
     if(canvas.inside(mouseX, mouseY)){
+        cleared = false;
         curPath.moveTo(mouseX, mouseY);
     }
 }
 
 //--------------------------------------------------------------
 void testApp::mouseReleased(int x, int y, int button){
-    if(canvas.inside(mouseX, mouseY)){
-      //  curPath.close();
+    if(canvas.inside(mouseX, mouseY) && pathToggle.value){
+        curPath.close();
     }
-}
-
-//--------------------------------------------------------------
-
-void testApp::guiSetup(){
-    float dim = 16;
-    vector<string> toggleNames;
     
-    toggleNames.push_back("ofPath");
-    toggleNames.push_back("ofPolyLine");
-    
-    gui = new ofxUICanvas(0,0,guiWidth+OFX_UI_GLOBAL_WIDGET_SPACING*2, ofGetHeight());
-    gui->addWidgetDown(new ofxUILabel("SIMPLE EXAMPLE", OFX_UI_FONT_LARGE));
-    gui->addWidgetDown(new ofxUISpacer(guiWidth, 2)); 
-    
-    gui->addWidgetDown(new ofxUIRadio( dim, dim, "ofxStrokeUtil datatype",toggleNames,OFX_UI_ORIENTATION_HORIZONTAL));
-    gui->addWidgetDown(new ofxUISpacer(guiWidth, 2));
-    gui->addWidgetDown(new ofxUIButton(dim, dim, false, "NEW", OFX_UI_FONT_SMALL));
-    
-    toggleNames.clear();
-    toggleNames.push_back("FILL");
-    toggleNames.push_back("OUTLINE");
-    toggleNames.push_back("STRAIGHT UP");
-    gui->addWidgetDown(new ofxUIRadio(dim, dim, "drawStyle", toggleNames, OFX_UI_ORIENTATION_VERTICAL));
-    gui->addWidgetDown(new ofxUISpacer(guiWidth, 2)); 
-    gui->addWidgetDown(new ofxUISlider(guiWidth, dim, 0, 30, 
-                                        strokeWidth, "stroke width")); 
-    gui->addWidgetDown(new ofxUIImageSampler(samplerImg.getWidth(), samplerImg.getHeight(),
-                                             &samplerImg, "sampler"));
-    gui->addWidgetDown(new ofxUISpacer(guiWidth, 2)); 
-    gui->addWidgetDown(new ofxUIToggle(dim, dim, testHull, "DRAW HULL"));
-    
-    ofAddListener(gui->newGUIEvent,this,&testApp::guiEvent);	
-    
-    
-    
-}
-void testApp::guiEvent(ofxUIEventArgs &e){
-    string name = e.widget->getName(); 
-	int kind = e.widget->getKind(); 
-    
-    if(name == "ofPath")
-    {
-        curPath.setMode(curPath.PATHS);
+    if(analyzeToggle.value){
+        results.clear();
+        analyze();
     }
-    else if(name == "ofPolyLine")
-    {
-        curPath.setMode(curPath.POLYLINES);
-    }
-    else if(name == "NEW")
-	{
-        curPath.clear();
-        cout << "cleared " << curPath.hasOutline() << endl;
-	}
-    else if(name == "FILL"){
-        //ofxUIToggle *toggle = (ofxUIToggle *)e.widget;
-        //curPath.setFilled(toggle->getValue());
-        //ofxUIRadio * rad = (ofxUIRadio *)e.widget;
-        curPath.setFilled(true);
-    }
-    else if(name == "OUTLINE"){
-        drawOutline = true;
-        curPath.setFilled(false);
-    }
-    else if(name == "STRAIGHT UP"){
-        drawOutline = false;
-        curPath.setFilled(false);
-    }
-    else if(name == "stroke width")
-	{
-		ofxUISlider *slider = (ofxUISlider *) e.widget; 
-        strokeWidth = (slider->getScaledValue());
-    }
-    else if(name == "sampler")
-	{
-		ofxUIImageSampler *sampler = (ofxUIImageSampler *) e.widget; 
-        curColor = sampler->getColor();
-	} 
-    else if(name == "DRAW HULL"){
-        ofxUIToggle *toggle = (ofxUIToggle *) e.widget;
-        testHull = toggle->getValue();
-    }
-}
-//--------------------------------------------------------------
-void testApp::keyPressed  (int key){
-
-}
-
-//--------------------------------------------------------------
-void testApp::keyReleased(int key){
-
 }
 
 //--------------------------------------------------------------
@@ -199,7 +285,3 @@ void testApp::gotMessage(ofMessage msg){
 void testApp::dragEvent(ofDragInfo dragInfo){ 
 
 }
-
-
-
-

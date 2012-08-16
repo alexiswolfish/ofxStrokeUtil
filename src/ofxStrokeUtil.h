@@ -19,6 +19,7 @@ class ofxStrokeUtil{
         //should go into ofPath
         float getArea(ofPath p);
         ofRectangle getBoundingBox(ofPath p);
+        vector<ofVec2f> getOrientedBoundingBox(ofPath p);
         ofPoint getCentroid(ofPath p);
         ofPoint getCenterOfMass(ofPath p);
     
