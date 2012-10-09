@@ -57,7 +57,7 @@ ofPoint ofxStrokeUtil::getCenterOfMass(ofPath p){
 
 /*---------------------------------------------------*
  OBB
- returns: bounding box aligned to the orientation axis.
+ returns: bounding box oriented along the orientation axis.
  *---------------------------------------------------*/
 vector<ofVec2f> ofxStrokeUtil::getOrientedBoundingBox(ofPath p){
     vector<ofVec2f> oBBCorners;

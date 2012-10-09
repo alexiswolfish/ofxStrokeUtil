@@ -37,7 +37,8 @@ class testApp : public ofBaseApp{
         
        /*---------Gui----------*/
         ofxPanel panelMain;
-        ofxToggle fillToggle, pathToggle, analyzeToggle, internalToggle;
+    ofxToggle fillToggle;
+        ofxToggle pathToggle, analyzeToggle, internalToggle;
         ofxButton newButton, analyzeButton;
         ofxSlider<float> strokeWidthSlider;
         
